@@ -2,6 +2,7 @@
 #include "HardwareSerial.h"
 #include "bg95.h"
 
+#define BROKER              "broker.hivemq.com"
 Bg95 nbiot;
 
 void setup() {
@@ -16,6 +17,11 @@ void setup() {
   bool flag = nbiot.connectMqtt(BROKER, "localhost","");
   DEBUG.println(flag);
   DEBUG.println(nbiot.debug);
+  flag = nbiot.subscribeMqtt("testtopic/quectel_test1",2);
+  DEBUG.println(flag);
+  String data = "gg";
+  flag = nbiot.sendMqtt("testtopic/quectel_test1", data, 2);
+  DEBUG.println(flag);
 }
 
 void loop() {

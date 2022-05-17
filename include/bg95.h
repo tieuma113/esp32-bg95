@@ -8,7 +8,6 @@
 
 #define DEBUG               Serial
 #define BG95                Serial2
-#define BROKER              "broker.hivemq.com"
 #define PORT        		1883
 
 class Bg95 {
@@ -50,7 +49,7 @@ class Bg95 {
         bool connectClient();
         bool checkClientConnect();
         bool checkSubscription();
-        bool checkSendMqtt();
+        bool checkSendMqtt(String &data);
 
         bool askForIp();
         bool askForImei();
