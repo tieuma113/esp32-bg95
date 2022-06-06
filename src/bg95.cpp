@@ -75,7 +75,6 @@ bool Bg95::checkClientConnect(){
 
 	while (!error && !ok && ((millis() - startTime) <= (unsigned long)timeOut)){
 		response = receiveAT();
-		DEBUG.println(response);
 		ok = (response.indexOf("+QMTCONN: 1,0") >= 0);
 		error = (response.indexOf("\r\nERROR\r\n") >= 0);
 	}
@@ -108,7 +107,6 @@ bool Bg95::checkSubscription(){
 
 	while(!error && !ok && ((millis() - startTime) <= (unsigned long)timeout)){
 		response += receiveAT();
-		DEBUG.println(response);
 		ok = (response.indexOf("QMTSUB: 1,1,0") >= 0);
 		error = (response.indexOf("\r\nERROR\r\n") >= 0);
 	}
@@ -119,10 +117,6 @@ bool Bg95::sendMqtt(String topic, String &data, int qos){
 	bool flag = true;
 	String atCommand = "AT+QMTPUB=1,1," + String(qos) +",0,\""+topic+"\"";
 	sendAT(atCommand);
-	// atCommand = data;
-	// sendAT(atCommand);
-	// atCommand = 0x1A;
-	// sendAT(atCommand);
 	flag = checkSendMqtt(data);
 	return flag;
 }
@@ -136,7 +130,6 @@ bool Bg95::checkSendMqtt(String &data){
 
 	while(!error && !ok && ((millis() - startTime) <= (unsigned long)timeout)){
 		response += receiveAT();
-		DEBUG.println(response);
 		ok = (response.indexOf(">")>= 0);
 		error = (response.indexOf("\r\nERROR\r\n") >= 0);
 		if (ok){
@@ -150,7 +143,6 @@ bool Bg95::checkSendMqtt(String &data){
 
 	while(!error && !ok && ((millis() - startTime) <= (unsigned long)timeout)){
 		response += receiveAT();
-		DEBUG.println(response);
 		ok = (response.indexOf("QMTPUB: 1,1,0")>=0);
 		error = (response.indexOf("\r\nERROR\r\n") >= 0);
 	}
@@ -167,8 +159,35 @@ bool Bg95::checkConnection(){
 
 	while (!error && !ok && ((millis() - startTime) <= (unsigned long)timeout)){
 		response += receiveAT();
-		DEBUG.println(response);
 		ok = (response.indexOf("+QMTOPEN: 1,0") >=0 );
+		error = (response.indexOf("\r\nERROR\r\n") >= 0);
+		// TODO: neu gap QMTOPEN: 1,2 thi se dong ket noi roi ket noi lai
+		if (response.indexOf("QMTOPEN: 1,2") >= 0){
+				reset();
+				break;
+		}
+	}
+	return ok;
+}
+
+bool Bg95::closeConnection(){
+	bool flag = true;
+	String atCommand = "AT+QMTCLOSE=1";
+	sendAT(atCommand);
+	flag = checkDissuccess();
+	return flag;
+}
+
+bool Bg95::checkDissuccess(){
+	int timeout = 30000;
+	String response;
+	bool ok = false;
+	bool error = false;
+	unsigned long startTime = millis();
+
+	while (!error && !ok && ((millis() - startTime) <= (unsigned long)timeout)){
+		response += receiveAT();
+		ok = (response.indexOf("+QMTCLOSE: 1,0") >=0 );
 		error = (response.indexOf("\r\nERROR\r\n") >= 0);
 	}
 	return ok;
@@ -179,6 +198,8 @@ bool Bg95::begin(){
     DEBUG.begin(9600);
 
     while (!BG95);
+
+	
 
     return setup();
 }
@@ -355,7 +376,7 @@ String Bg95::checkImei ()
 }
 
 String Bg95::receiveAT(){
-    	String received;
+    String received;
 
 	// Save data received from BG96 module
 	while (BG95.available()) {
@@ -364,14 +385,13 @@ String Bg95::receiveAT(){
 #ifdef DEBUGMODE
 	printAT (received);					// DEBUG: Print response from BG96 module
 #endif
-
 	return received;	
 }
 
 void Bg95::printAT ( String text ) 
 {
 	if (text.length() > 0) {			// If string is not empty ...
-		DEBUG.print(text);				// Send by debug serial port the string
+		DEBUG.println(text);				// Send by debug serial port the string
 	}
 }
 
@@ -437,4 +457,12 @@ bool Bg95::checkOK( int timeOut )
 	}
 
 	return ok;
+}
+
+bool Bg95::reset(){
+	bool flag = true;
+	String atCommand = "AT+CFUN=1,1";
+	sendAT(atCommand);
+	flag = checkOK(1000);
+	return flag;
 }
